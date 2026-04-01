@@ -1,0 +1,18 @@
+# Build
+build/
+build/
+bin/
+
+# IDE
+.vs/
+.cache/
+cmakedirs -s config user for Visual Studio
+2019+
+
+# Compiled
+*.dp32 / *.dp64 / *.obj / *.lib / *.exp / *.pdb
+x
+*.ilk
+*.user
+os *.suo.doc
+

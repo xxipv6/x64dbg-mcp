@@ -9,7 +9,12 @@
 
 struct McpConfig;
 
+// ToolHandler is defined in tools/common.h (included via tool_dispatcher.h).
+// If tools/common.h has already been included, ToolHandler is already available.
+// Otherwise, provide a matching forward definition.
+#ifndef TOOLS_COMMON_H
 using ToolHandler = std::function<nlohmann::json(const nlohmann::json& params)>;
+#endif
 
 class McpServer {
 public:

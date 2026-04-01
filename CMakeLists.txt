@@ -10,13 +10,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SOURCES
     src/main.cpp
     src/mcp_server.cpp
-    src/tool_dispatcher.cpp
+    src/tools/register.cpp
+    src/tools/core.cpp
+    src/tools/memory.cpp
+    src/tools/breakpoints.cpp
+    src/tools/control.cpp
+    src/tools/threads.cpp
+    src/tools/analysis.cpp
+    src/tools/process.cpp
     src/config.cpp
 )
 
 set(INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # ---------------------------------------------------------------------------

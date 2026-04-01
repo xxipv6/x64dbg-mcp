@@ -1,11 +1,7 @@
 #pragma once
 
-#include <string>
-#include <unordered_map>
-#include <functional>
-#include <nlohmann/json.hpp>
+#include "tools/common.h"
 
-using ToolHandler = std::function<nlohmann::json(const nlohmann::json& params)>;
-
-// Register all MCP tools with their handlers
-void RegisterTools(std::unordered_map<std::string, ToolHandler>& tools);
+// Register all MCP tools with their handlers.
+// Defined in src/tools/register.cpp.
+void RegisterTools(ToolMap& tools);

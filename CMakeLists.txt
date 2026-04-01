@@ -61,15 +61,18 @@ if(CMAKE_CXX_COMPILER MATCHES "mingw" OR CMAKE_CROSSCOMPILING)
         -static-libstdc++
     )
 
-    # Determine suffix from the compiler target
+    # Determine output name and suffix from the compiler target
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(PLUGIN_NAME "x64dbg-mcp")
         set(PLUGIN_SUFFIX ".dp64")
     else()
+        set(PLUGIN_NAME "x32dbg-mcp")
         set(PLUGIN_SUFFIX ".dp32")
     endif()
 
     set_target_properties(x64dbg-mcp PROPERTIES
-        OUTPUT_NAME "x64dbg-mcp"
+        PREFIX ""
+        OUTPUT_NAME "${PLUGIN_NAME}"
         SUFFIX "${PLUGIN_SUFFIX}"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
@@ -79,7 +82,7 @@ else()
     # Native MSVC build on Windows — build both 32-bit and 64-bit targets
     message(STATUS "Native Windows build — creating x86 and x64 targets")
 
-    function(add_x64dbg_plugin TARGET_SUFFIX ARCH_SUFFIX)
+    function(add_x64dbg_plugin TARGET_SUFFIX ARCH_SUFFIX PLUGIN_NAME)
         set(TARGET_NAME x64dbg-mcp${TARGET_SUFFIX})
 
         add_library(${TARGET_NAME} SHARED ${SOURCES})
@@ -107,14 +110,14 @@ else()
             dbghelp
         )
 
-        # Output: bin/x64dbg-mcp.dp32 or bin/x64dbg-mcp.dp64
+        # Output: bin/x32dbg-mcp.dp32 or bin/x64dbg-mcp.dp64
         set_target_properties(${TARGET_NAME} PROPERTIES
-            OUTPUT_NAME "x64dbg-mcp"
+            OUTPUT_NAME "${PLUGIN_NAME}"
             SUFFIX ".dp${ARCH_SUFFIX}"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         )
     endfunction()
 
-    add_x64dbg_plugin("32" "32")
-    add_x64dbg_plugin("64" "64")
+    add_x64dbg_plugin("32" "32" "x32dbg-mcp")
+    add_x64dbg_plugin("64" "64" "x64dbg-mcp")
 endif()

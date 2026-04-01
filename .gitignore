@@ -7,13 +7,15 @@ bin/
 # Compiled objects
 *.obj
 *.o
-*.a
 *.lib
 *.exp
 *.pdb
 *.ilk
 *.dp32
 *.dp64
+
+# Generated import libs (except lib/ which are external deps)
+/*.a
 
 # IDE
 .vs/

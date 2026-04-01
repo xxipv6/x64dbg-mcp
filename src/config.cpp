@@ -3,7 +3,7 @@
 #include <fstream>
 #include <mutex>
 
-#include "../third_party/json.hpp"
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 

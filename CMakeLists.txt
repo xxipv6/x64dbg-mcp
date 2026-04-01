@@ -23,7 +23,6 @@ set(SOURCES
 
 set(INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
@@ -53,8 +52,8 @@ if(CMAKE_CXX_COMPILER MATCHES "mingw" OR CMAKE_CROSSCOMPILING)
     # Link libraries (Windows system libs via MinGW)
     # Two import libraries: _plugin_* from x64dbg.exe, Dbg*/Bridge* from x64bridge.dll
     target_link_libraries(x64dbg-mcp PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/libx64dbg_plugin.a
-        ${CMAKE_CURRENT_SOURCE_DIR}/libx64bridge.a
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib/libx64dbg_plugin.a
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib/libx64bridge.a
         ws2_32
         dbghelp
         -static

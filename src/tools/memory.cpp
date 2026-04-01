@@ -209,9 +209,15 @@ static nlohmann::json HandleAllocMem(const nlohmann::json& params)
     try
     {
         size_t size = params.at("size").get<size_t>();
-        std::ostringstream cmd;
-        cmd << "alloc 0x" << std::hex << size;
-        return SimpleCmd(cmd.str());
+        // Use VirtualAllocEx via the debuggee directly for deterministic result
+        // Alternative: use x64dbg script eval "mem.alloc(size)"
+        std::ostringstream expr;
+        expr << "mem.alloc(0x" << std::hex << size << ")";
+        duint addr = DbgValFromString(expr.str().c_str());
+        bool ok = (addr != 0);
+        nlohmann::json r = {{"success", ok}, {"size", size}};
+        if (ok) r["address"] = RegToHex(addr);
+        return r;
     }
     catch (const std::exception& e) { return {{"success", false}, {"error", std::string("alloc_mem: ") + e.what()}}; }
 }

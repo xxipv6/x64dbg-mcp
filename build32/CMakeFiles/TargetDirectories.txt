@@ -1,0 +1,3 @@
+/workspace/x64dbg-mcp/build32/CMakeFiles/x32dbg-mcp.dir
+/workspace/x64dbg-mcp/build32/CMakeFiles/edit_cache.dir
+/workspace/x64dbg-mcp/build32/CMakeFiles/rebuild_cache.dir

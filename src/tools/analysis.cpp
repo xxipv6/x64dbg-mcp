@@ -15,7 +15,7 @@ static nlohmann::json HandleGetLabel(const nlohmann::json& params)
         char text[MAX_LABEL_SIZE] = {};
         bool ok = DbgGetLabelAt(addr, SEG_DEFAULT, text);
         nlohmann::json r = {{"success", ok}, {"address", addrStr}};
-        if (ok) r["label"] = std::string(text);
+        if (ok && text[0] != '\0') r["label"] = std::string(text);
         return r;
     }
     catch (const std::exception& e)
@@ -35,9 +35,9 @@ static nlohmann::json HandleSetLabel(const nlohmann::json& params)
         std::string addrStr = params.at("address").get<std::string>();
         std::string text = params.at("text").get<std::string>();
         duint addr = ParseHexAddress(addrStr);
-        std::ostringstream cmd;
-        cmd << "SetLabel 0x" << std::hex << addr << ", \"" << text << "\"";
-        return SimpleCmd(cmd.str());
+        // Use bridge API directly (synchronous) instead of async command
+        bool ok = DbgSetLabelAt(addr, text.c_str());
+        return {{"success", ok}, {"address", addrStr}, {"label", text}};
     }
     catch (const std::exception& e)
     {
@@ -56,9 +56,16 @@ static nlohmann::json HandleGetComment(const nlohmann::json& params)
         std::string addrStr = params.at("address").get<std::string>();
         duint addr = ParseHexAddress(addrStr);
         char text[MAX_COMMENT_SIZE] = {};
-        bool ok = DbgGetCommentAt(addr, text);
+        bool ok = false;
+        // Prefer GetUserComment (returns only user-set comments)
+        auto* dbgFuncs = DbgFunctions();
+        if (dbgFuncs && dbgFuncs->GetUserComment)
+            ok = dbgFuncs->GetUserComment(addr, text);
+        // Fallback: use bridge API (returns both auto + user comments)
+        if (!ok)
+            ok = DbgGetCommentAt(addr, text);
         nlohmann::json r = {{"success", ok}, {"address", addrStr}};
-        if (ok) r["comment"] = std::string(text);
+        if (ok && text[0] != '\0') r["comment"] = std::string(text);
         return r;
     }
     catch (const std::exception& e)
@@ -78,9 +85,8 @@ static nlohmann::json HandleSetComment(const nlohmann::json& params)
         std::string addrStr = params.at("address").get<std::string>();
         std::string text = params.at("text").get<std::string>();
         duint addr = ParseHexAddress(addrStr);
-        std::ostringstream cmd;
-        cmd << "SetComment 0x" << std::hex << addr << ", \"" << text << "\"";
-        return SimpleCmd(cmd.str());
+        bool ok = DbgSetCommentAt(addr, text.c_str());
+        return {{"success", ok}, {"address", addrStr}, {"comment", text}};
     }
     catch (const std::exception& e)
     {

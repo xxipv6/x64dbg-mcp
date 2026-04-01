@@ -67,8 +67,27 @@ static nlohmann::json HandleApplyPatch(const nlohmann::json& params)
         std::string addrStr = params.at("address").get<std::string>();
         duint addr = ParseHexAddress(addrStr);
         std::string hexData = params.at("data").get<std::string>();
+        std::vector<unsigned char> bytes;
+        std::istringstream iss(hexData);
+        std::string tok;
+        while (iss >> tok)
+            bytes.push_back(static_cast<unsigned char>(std::stoul(tok, nullptr, 16)));
+        if (bytes.empty())
+            return {{"success", false}, {"error", "No valid hex bytes"}};
+
+        // Read original bytes first for verification
+        std::vector<unsigned char> orig(bytes.size(), 0);
+        DbgMemRead(addr, orig.data(), static_cast<duint>(bytes.size()));
+
+        // Use "replace" command which properly registers patches in x64dbg's patch system
         std::ostringstream cmd;
-        cmd << "Fill 0x" << std::hex << addr << ", 0x" << ParseHexBytes(hexData).size() << ", \"" << hexData << "\"";
+        cmd << "replace 0x" << std::hex << addr << ", \"";
+        for (size_t i = 0; i < bytes.size(); ++i)
+        {
+            if (i > 0) cmd << " ";
+            cmd << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(bytes[i]);
+        }
+        cmd << "\"";
         return SimpleCmd(cmd.str());
     }
     catch (const std::exception& e) { return {{"success", false}, {"error", std::string("apply_patch: ") + e.what()}}; }

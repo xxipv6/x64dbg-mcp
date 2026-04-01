@@ -1,17 +1,23 @@
-LIBRARY x64bridge.dll
+LIBRARY x32bridge.dll
 EXPORTS
     BridgeAlloc
     BridgeFree
     BridgeGetDbgVersion
     BridgeGetNtBuildNumber
+    BridgeInit
     BridgeIsARM64Emulated
     BridgeIsProcessElevated
+    BridgeLoadLibraryCheckedA@8
+    BridgeLoadLibraryCheckedW@8
     BridgeSettingFlush
     BridgeSettingGet
     BridgeSettingGetUint
     BridgeSettingRead
     BridgeSettingSet
     BridgeSettingSetUint
+    BridgeStart
+    BridgeUserDirectory
+    BridgeWorkingDirectory
     DbgAnalyzeFunction
     DbgArgumentAdd
     DbgArgumentDel
@@ -55,6 +61,7 @@ EXPORTS
     DbgGetPebAddress
     DbgGetProcessHandle
     DbgGetProcessId
+    DbgGetRegDump
     DbgGetRegDumpEx
     DbgGetStringAt
     DbgGetSymbolInfo
@@ -65,6 +72,8 @@ EXPORTS
     DbgGetThreadList
     DbgGetTimeWastedCounter
     DbgGetWatchList
+    DbgGetXrefCountAt
+    DbgGetXrefTypeAt
     DbgInit
     DbgInitBlocking
     DbgIsBpDisabled
@@ -92,6 +101,7 @@ EXPORTS
     DbgScriptBpToggle
     DbgScriptCmdExec
     DbgScriptGetBranchInfo
+    DbgScriptGetLineType
     DbgScriptLoad
     DbgScriptRun
     DbgScriptSetIp
@@ -159,6 +169,7 @@ EXPORTS
     GuiIsLogEnabled
     GuiIsUpdateDisabled
     GuiLoadGraph
+    GuiLoadSourceFile
     GuiLoadSourceFileEx
     GuiLogClear
     GuiLogRedirect

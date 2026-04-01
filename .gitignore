@@ -1,18 +1,35 @@
-# Build
+# Build directories
 build/
-build/
+build-x64/
+build-x86/
 bin/
+
+# Compiled objects
+*.obj
+*.o
+*.a
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.dp32
+*.dp64
 
 # IDE
 .vs/
+.vscode/
 .cache/
-cmakedirs -s config user for Visual Studio
-2019+
-
-# Compiled
-*.dp32 / *.dp64 / *.obj / *.lib / *.exp / *.pdb
-x
-*.ilk
 *.user
-os *.suo.doc
+*.suo
+*.sln
+*.vcxproj*
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Config (user-specific, keep template)
+# x64dbg-mcp.json  -- keep this as template
+
+# Third-party large files
+pluginsdk/*.lib

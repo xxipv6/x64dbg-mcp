@@ -34,7 +34,7 @@ set(COMMON_DEFINITIONS
 
 # Architecture-specific link libraries
 set(X86_LIBS
-    ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86/libx64dbg_plugin.a
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86/libx32dbg_plugin.a
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86/libx32bridge.a
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86/libx32dbg.a
     ws2_32

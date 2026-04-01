@@ -1,7 +1,7 @@
 #ifndef _BRIDGEMAIN_H_
 #define _BRIDGEMAIN_H_
 
-#include <Windows.h>
+#include <windows.h>
 #include <stdint.h>
 
 #ifndef __cplusplus

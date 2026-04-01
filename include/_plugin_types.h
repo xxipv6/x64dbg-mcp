@@ -12,16 +12,8 @@
 
 #else
 
-#include <Windows.h>
-
-#ifdef __GNUC__
-#include "dbghelp/dbghelp.h"
-#else
-#pragma warning(push)
-#pragma warning(disable:4091)
-#include <DbgHelp.h>
-#pragma warning(pop)
-#endif // __GNUC__
+#include <windows.h>
+#include <dbghelp.h>
 
 #ifndef deflen
 #define deflen 1024

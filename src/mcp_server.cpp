@@ -159,6 +159,14 @@ void McpServer::Stop()
         return;
 
     running_.store(false);
+
+    // Signal the httplib::Server to stop listening so ServerThread can exit.
+    if (server_)
+    {
+        auto* svr = static_cast<httplib::Server*>(server_);
+        svr->stop();
+    }
+
     if (thread_.joinable())
         thread_.join();
 }
@@ -344,7 +352,7 @@ std::string McpServer::HandleJsonRpc(const std::string& body)  // renamed to mat
 // Server thread -- sets up httplib routes and listens.
 // ---------------------------------------------------------------------------
 
-void McpServer::ServerThread(const McpConfig& config)
+void McpServer::ServerThread(McpConfig config)
 {
     httplib::Server svr;
 

@@ -7,7 +7,6 @@ bin/
 # Compiled objects
 *.obj
 *.o
-*.lib
 *.exp
 *.pdb
 *.ilk
@@ -33,5 +32,4 @@ Thumbs.db
 # Config (user-specific, keep template)
 # x64dbg-mcp.json  -- keep this as template
 
-# Third-party large files
-pluginsdk/*.lib
+# Third-party

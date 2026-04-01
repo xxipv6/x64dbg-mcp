@@ -30,3 +30,4 @@ mkdir build64 && cd build64
 cmake -B build64 -A x64 -G "Visual Studio 17 2022" ..
 cm --build build64 --config Release
 ```
+# x64dbg-mcp

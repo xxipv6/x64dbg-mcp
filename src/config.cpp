@@ -25,22 +25,15 @@ static std::string GetDllDirectory(HINSTANCE dllModule)
 }
 
 // ---------------------------------------------------------------------------
-// Helper: build the config file path (same name as DLL, .json extension).
+// Helper: build the config file path.
+// The config file always has the fixed name "x64dbg-mcp.json" and sits next
+// to the plugin DLL.  We cannot derive it from the DLL filename because the
+// DLL may be named "x64dbg-mcp.dp64" or "x32dbg-mcp.dp32" (double extension),
+// which would break simple "replace-last-dot" logic.
 // ---------------------------------------------------------------------------
 static std::string GetConfigFilePath(HINSTANCE dllModule)
 {
-    char dllPath[MAX_PATH] = {};
-    GetModuleFileNameA(dllModule, dllPath, MAX_PATH);
-
-    std::string configPath(dllPath);
-
-    // Replace the extension with .json.
-    auto dotPos = configPath.find_last_of('.');
-    if (dotPos != std::string::npos)
-        configPath.resize(dotPos);
-    configPath += ".json";
-
-    return configPath;
+    return GetDllDirectory(dllModule) + "x64dbg-mcp.json";
 }
 
 // ---------------------------------------------------------------------------

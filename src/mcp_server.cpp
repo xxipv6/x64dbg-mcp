@@ -438,7 +438,25 @@ std::string McpServer::HandleJsonRpc(const std::string& body)  // renamed to mat
 
         try
         {
+            // Log the tool call to x64dbg's Log Window
+            {
+                std::string paramStr = toolParams.dump(-1, ' ', false,
+                    nlohmann::json::error_handler_t::ignore);
+                if (paramStr.size() > 256)
+                    paramStr = paramStr.substr(0, 253) + "...";
+                _plugin_logprintf("[x64dbg-mcp] >> %s(%s)\n",
+                                  toolName.c_str(), paramStr.c_str());
+            }
+
             json toolResult = it->second(toolParams);
+
+            // Log the result status
+            {
+                bool ok = !toolResult.contains("success") ||
+                          toolResult.value("success", true);
+                _plugin_logprintf("[x64dbg-mcp] << %s %s\n",
+                                  toolName.c_str(), ok ? "OK" : "FAIL");
+            }
 
             // The MCP spec expects the result wrapped in a content array.
             // If the tool handler already returns a content-shaped object,

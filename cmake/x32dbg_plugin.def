@@ -1,4 +1,4 @@
-LIBRARY x64dbg.dll
+LIBRARY x32dbg.dll
 EXPORTS
     _plugin_logprintf
     _plugin_logputs

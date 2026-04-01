@@ -1,4 +1,4 @@
-LIBRARY x64dbg.dll
+LIBRARY x32dbg.dll
 EXPORTS
     DllMain@12
     _dbg_addrinfoget

@@ -31,6 +31,7 @@ install_manifest.txt
 *.ilk
 *.dp32
 *.dp64
+/x
 
 # Generated import libs at repo root only (keep lib/x86 and lib/x64 tracked)
 /*.a

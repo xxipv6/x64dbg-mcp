@@ -41,7 +41,7 @@ const std::vector<ToolDefinition> kToolDefinitions = {
     {"alloc_mem", "Allocate memory in the debugged process.", OBJ_SCHEMA(PARAMS(INT_DESC("size", "Bytes to allocate")), REQ("size"))},
     {"free_mem", "Free previously allocated memory.", OBJ_SCHEMA(PARAMS(STR_DESC("address", "Hex address to free")), REQ("address"))},
     {"set_mem_protect", "Set memory protection for a region.", OBJ_SCHEMA(PARAMS(STR_DESC("address", "Hex address"), INT_DESC("size", "Region size"), STR_DESC("protection", "Protection string (e.g. \"rwx\", \"rx\", \"r\")")), REQ("address", "size", "protection"))},
-    {"dump_mem", "Save a memory region to a file.", OBJ_SCHEMA(PARAMS(STR_DESC("address", "Hex address"), INT_DESC("size", "Bytes to dump"), STR_DESC("path", "Output file path")), REQ("address", "size", "path"))},
+    {"dump_mem", "Save a memory region to a file under .\\plugins\\mcp_dump on the debugger host. The path parameter is treated as a filename or basename only.", OBJ_SCHEMA(PARAMS(STR_DESC("address", "Hex address"), INT_DESC("size", "Bytes to dump"), STR_DESC("path", "Output filename or path basename; file is always written under .\\plugins\\mcp_dump")), REQ("address", "size", "path"))},
     {"bp_list", "List breakpoints. type: 0=all, 1=normal, 2=hardware, 3=memory, 4=dll.", OBJ_SCHEMA(PARAMS(INT_DESC("type", "BP type filter: 0=all,1=normal,2=hw,3=mem,4=dll")), REQ())},
     {"set_bp", "Set a software breakpoint at an address.", OBJ_SCHEMA(PARAMS(STR_DESC("address", "Hex address")), REQ("address"))},
     {"remove_bp", "Remove a software breakpoint at an address.", OBJ_SCHEMA(PARAMS(STR_DESC("address", "Hex address")), REQ("address"))},

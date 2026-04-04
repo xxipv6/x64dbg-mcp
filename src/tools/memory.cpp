@@ -68,6 +68,7 @@ static nlohmann::json HandleMemWrite(const nlohmann::json& params)
 namespace {
 
 constexpr size_t kDefaultMemMapLimit = 100;
+constexpr const char* kDumpDir = ".\\plugins\\mcp_dump\\";
 
 static nlohmann::json MemRegionToJson(const MEMPAGE& page)
 {
@@ -344,9 +345,37 @@ static nlohmann::json HandleDumpMem(const nlohmann::json& params)
         duint addr = ParseHexAddress(addrStr);
         size_t size = params.at("size").get<size_t>();
         std::string path = params.at("path").get<std::string>();
-        std::ostringstream cmd;
-        cmd << "savedata \"" << path << "\", 0x" << std::hex << addr << ", 0x" << size;
-        return SimpleCmd(cmd.str());
+
+        auto slash = path.find_last_of("\\/");
+        std::string filename = (slash == std::string::npos) ? path : path.substr(slash + 1);
+        if (filename.empty())
+            return {{"success", false}, {"error", "Invalid output filename"}};
+
+        std::error_code ec;
+        if (!std::filesystem::create_directories(kDumpDir, ec) && ec)
+            return {{"success", false}, {"error", "failed to create dump directory"}, {"directory", kDumpDir}};
+
+        std::vector<unsigned char> buffer(size, 0);
+        if (!DbgMemRead(addr, buffer.data(), static_cast<duint>(size)))
+            return {{"success", false}, {"error", "failed to read memory"}, {"address", addrStr}, {"size", size}};
+
+        std::string finalPath = std::string(kDumpDir) + filename;
+        std::ofstream out(finalPath, std::ios::binary | std::ios::trunc);
+        if (!out)
+            return {{"success", false}, {"error", "failed to open output file"}, {"path", finalPath}};
+
+        out.write(reinterpret_cast<const char*>(buffer.data()), static_cast<std::streamsize>(buffer.size()));
+        if (!out)
+            return {{"success", false}, {"error", "failed to write output file"}, {"path", finalPath}};
+
+        out.close();
+        return {
+            {"success", true},
+            {"directory", kDumpDir},
+            {"path", finalPath},
+            {"size", size},
+            {"file_size", std::filesystem::file_size(finalPath)}
+        };
     }
     catch (const std::exception& e) { return {{"success", false}, {"error", std::string("dump_mem: ") + e.what()}}; }
 }

@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <chrono>
 #include <thread>
+#include <fstream>
+#include <filesystem>
 #include <nlohmann/json.hpp>
 
 #include <bridgemain.h>

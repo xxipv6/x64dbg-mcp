@@ -3,18 +3,13 @@
 #include <string>
 #include <thread>
 #include <atomic>
-#include <unordered_map>
-#include <functional>
 #include <nlohmann/json.hpp>
 
-struct McpConfig;
+namespace httplib {
+class Server;
+}
 
-// ToolHandler is defined in tools/common.h (included via tool_dispatcher.h).
-// If tools/common.h has already been included, ToolHandler is already available.
-// Otherwise, provide a matching forward definition.
-#ifndef TOOLS_COMMON_H
-using ToolHandler = std::function<nlohmann::json(const nlohmann::json& params)>;
-#endif
+struct McpConfig;
 
 class McpServer {
 public:
@@ -30,7 +25,5 @@ private:
 
     std::atomic<bool> running_{false};
     std::thread thread_;
-
-    // Pointer to httplib::Server inside ServerThread, for shutdown signaling.
-    void* server_ = nullptr;
+    httplib::Server* server_ = nullptr;
 };

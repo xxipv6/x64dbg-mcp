@@ -15,11 +15,13 @@
 #include "config.h"         // McpConfig, LoadConfig
 #include "mcp_server.h"     // McpServer
 
+#include <memory>
+
 // ---------------------------------------------------------------------------
 // Global state
 // ---------------------------------------------------------------------------
 
-static McpServer* g_mcp_server = nullptr;
+static std::unique_ptr<McpServer> g_mcp_server;
 static HINSTANCE g_hInstance = nullptr;
 
 // ---------------------------------------------------------------------------
@@ -64,12 +66,11 @@ extern "C" __declspec(dllexport) bool pluginit(PLUG_INITSTRUCT* initStruct)
     McpConfig config = LoadConfig(g_hInstance);
 
     // --- Create and start the MCP server -------------------------------------
-    g_mcp_server = new McpServer();
+    g_mcp_server = std::make_unique<McpServer>();
     if (!g_mcp_server->Start(config)) {
         _plugin_logprintf("[x64dbg-mcp] Failed to start MCP server on %s:%d\n",
                           config.host.c_str(), config.port);
-        delete g_mcp_server;
-        g_mcp_server = nullptr;
+        g_mcp_server.reset();
         return false;
     }
 
@@ -90,8 +91,7 @@ extern "C" __declspec(dllexport) bool plugstop()
 {
     if (g_mcp_server) {
         g_mcp_server->Stop();
-        delete g_mcp_server;
-        g_mcp_server = nullptr;
+        g_mcp_server.reset();
     }
 
     _plugin_logputs("[x64dbg-mcp] Stopped MCP server");

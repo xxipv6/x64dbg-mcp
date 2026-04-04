@@ -65,31 +65,103 @@ static nlohmann::json HandleMemWrite(const nlohmann::json& params)
 // Tool: mem_map
 // ---------------------------------------------------------------------------
 
-static nlohmann::json HandleMemMap(const nlohmann::json&)
+namespace {
+
+constexpr size_t kDefaultMemMapLimit = 100;
+
+static nlohmann::json MemRegionToJson(const MEMPAGE& page)
+{
+    return {
+        {"base", RegToHex((ULONG_PTR)page.mbi.BaseAddress)},
+        {"allocation_base", RegToHex((ULONG_PTR)page.mbi.AllocationBase)},
+        {"size", RegToHex(page.mbi.RegionSize)},
+        {"state", page.mbi.State},
+        {"protect", page.mbi.Protect},
+        {"type", page.mbi.Type},
+        {"info", std::string(page.info)}
+    };
+}
+
+static bool ContainsInsensitive(const std::string& text, const std::string& needle)
+{
+    if (needle.empty())
+        return true;
+
+    auto lowerText = text;
+    auto lowerNeedle = needle;
+    std::transform(lowerText.begin(), lowerText.end(), lowerText.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::transform(lowerNeedle.begin(), lowerNeedle.end(), lowerNeedle.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return lowerText.find(lowerNeedle) != std::string::npos;
+}
+
+} // namespace
+
+static nlohmann::json HandleMemMap(const nlohmann::json& params)
 {
     MEMMAP memmap = {};
     bool ok = DbgMemMap(&memmap);
     nlohmann::json result;
     result["success"] = ok;
-    if (ok)
+    if (!ok)
+        return result;
+
+    size_t offset = params.value("offset", static_cast<size_t>(0));
+    size_t limit = params.value("limit", kDefaultMemMapLimit);
+    bool all = params.value("all", false);
+    std::string infoContains = params.value("info_contains", std::string());
+    std::string baseEquals = params.value("base", std::string());
+    int stateFilter = params.value("state", -1);
+    int protectFilter = params.value("protect", -1);
+    int typeFilter = params.value("type", -1);
+
+    auto matched = nlohmann::json::array();
+    size_t matchedCount = 0;
+    size_t skipped = 0;
+
+    for (int i = 0; i < memmap.count; ++i)
     {
-        result["count"] = memmap.count;
-        auto regions = nlohmann::json::array();
-        for (int i = 0; i < memmap.count; ++i)
+        auto& page = memmap.page[i];
+        auto base = RegToHex((ULONG_PTR)page.mbi.BaseAddress);
+        auto info = std::string(page.info);
+
+        if (!baseEquals.empty() && _stricmp(base.c_str(), baseEquals.c_str()) != 0)
+            continue;
+        if (stateFilter >= 0 && static_cast<int>(page.mbi.State) != stateFilter)
+            continue;
+        if (protectFilter >= 0 && static_cast<int>(page.mbi.Protect) != protectFilter)
+            continue;
+        if (typeFilter >= 0 && static_cast<int>(page.mbi.Type) != typeFilter)
+            continue;
+        if (!ContainsInsensitive(info, infoContains))
+            continue;
+
+        ++matchedCount;
+        if (skipped < offset)
         {
-            auto& p = memmap.page[i];
-            regions.push_back({
-                {"base", RegToHex((ULONG_PTR)p.mbi.BaseAddress)},
-                {"allocation_base", RegToHex((ULONG_PTR)p.mbi.AllocationBase)},
-                {"size", RegToHex(p.mbi.RegionSize)},
-                {"state", p.mbi.State},
-                {"protect", p.mbi.Protect},
-                {"type", p.mbi.Type},
-                {"info", std::string(p.info)}
-            });
+            ++skipped;
+            continue;
         }
-        result["regions"] = regions;
+        if (!all && matched.size() >= limit)
+            continue;
+
+        matched.push_back(MemRegionToJson(page));
     }
+
+    result["count"] = memmap.count;
+    result["matched_count"] = matchedCount;
+    result["offset"] = offset;
+    result["limit"] = all ? matchedCount : limit;
+    result["truncated"] = !all && (offset + matched.size() < matchedCount);
+    result["returned_count"] = matched.size();
+    result["filters"] = {
+        {"all", all},
+        {"base", baseEquals},
+        {"info_contains", infoContains},
+        {"state", stateFilter >= 0 ? nlohmann::json(stateFilter) : nlohmann::json(nullptr)},
+        {"protect", protectFilter >= 0 ? nlohmann::json(protectFilter) : nlohmann::json(nullptr)},
+        {"type", typeFilter >= 0 ? nlohmann::json(typeFilter) : nlohmann::json(nullptr)}
+    };
+    result["regions"] = matched;
     return result;
 }
 
@@ -209,14 +281,18 @@ static nlohmann::json HandleAllocMem(const nlohmann::json& params)
     try
     {
         size_t size = params.at("size").get<size_t>();
-        // Use VirtualAllocEx via the debuggee directly for deterministic result
-        // Alternative: use x64dbg script eval "mem.alloc(size)"
-        std::ostringstream expr;
-        expr << "mem.alloc(0x" << std::hex << size << ")";
-        duint addr = DbgValFromString(expr.str().c_str());
+        std::ostringstream cmd;
+        cmd << "alloc 0x" << std::hex << size;
+        if (!DbgCmdExecDirect(cmd.str().c_str()))
+            return {{"success", false}, {"error", "alloc command failed"}, {"size", size}};
+
+        duint addr = DbgValFromString("$result");
         bool ok = (addr != 0);
         nlohmann::json r = {{"success", ok}, {"size", size}};
-        if (ok) r["address"] = RegToHex(addr);
+        if (ok)
+            r["address"] = RegToHex(addr);
+        else
+            r["error"] = "alloc returned null";
         return r;
     }
     catch (const std::exception& e) { return {{"success", false}, {"error", std::string("alloc_mem: ") + e.what()}}; }

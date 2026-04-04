@@ -1,24 +1,44 @@
 # Build directories
 build/
+build32/
+build64/
 build-x64/
 build-x86/
 bin/
+out/
+dist/
 
-# Compiled objects
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+CTestTestfile.cmake
+install_manifest.txt
+
+# Compiled objects and binaries
 *.obj
 *.o
+*.lo
+*.la
+*.dll
+*.dll.a
+*.exe
+*.out
 *.exp
 *.pdb
 *.ilk
 *.dp32
 *.dp64
 
-# Generated import libs (except lib/ which are external deps)
+# Generated import libs at repo root only (keep lib/x86 and lib/x64 tracked)
 /*.a
 
 # IDE
 .vs/
 .vscode/
+.idea/
 .cache/
 *.user
 *.suo
@@ -29,7 +49,5 @@ bin/
 .DS_Store
 Thumbs.db
 
-# Config (user-specific, keep template)
-# x64dbg-mcp.json  -- keep this as template
-
-# Third-party
+# Local config overrides
+x64dbg-mcp.local.json

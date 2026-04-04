@@ -7,6 +7,8 @@
 #include <cstring>
 #include <functional>
 #include <unordered_map>
+#include <chrono>
+#include <thread>
 #include <nlohmann/json.hpp>
 
 #include <bridgemain.h>
@@ -77,12 +79,63 @@ inline std::vector<unsigned char> ParseHexBytes(const std::string& hexStr)
     return bytes;
 }
 
+inline nlohmann::json ToolError(const char* tool, const std::exception& e)
+{
+    return {{"success", false}, {"error", std::string(tool) + ": " + e.what()}};
+}
+
 inline nlohmann::json SimpleCmd(const std::string& cmd)
 {
     nlohmann::json result;
     bool ok = DbgCmdExec(cmd.c_str());
     result["success"] = ok;
     result["command"] = cmd;
+    return result;
+}
+
+inline nlohmann::json StateCheckedCmd(
+    const std::string& cmd,
+    bool expectedDebugging,
+    int timeoutMs = 1500,
+    int pollIntervalMs = 50,
+    bool direct = false)
+{
+    nlohmann::json result;
+    bool ok = direct ? DbgCmdExecDirect(cmd.c_str()) : DbgCmdExec(cmd.c_str());
+    result["command"] = cmd;
+    result["success"] = false;
+    result["timed_out"] = false;
+
+    if (!ok)
+    {
+        result["error"] = "command failed";
+        result["debugging"] = DbgIsDebugging();
+        result["running"] = DbgIsRunning();
+        return result;
+    }
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
+    bool debugging = DbgIsDebugging();
+    bool running = DbgIsRunning();
+    while (std::chrono::steady_clock::now() < deadline)
+    {
+        debugging = DbgIsDebugging();
+        running = DbgIsRunning();
+        if (debugging == expectedDebugging)
+        {
+            result["success"] = true;
+            result["debugging"] = debugging;
+            result["running"] = running;
+            return result;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(pollIntervalMs));
+    }
+
+    debugging = DbgIsDebugging();
+    running = DbgIsRunning();
+    result["debugging"] = debugging;
+    result["running"] = running;
+    result["timed_out"] = true;
     return result;
 }
 

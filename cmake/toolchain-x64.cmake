@@ -1,4 +1,4 @@
-# CMake toolchain file for cross-compiling Windows x64 on Linux
+# CMake toolchain file for cross-compiling Windows x64 on Linux.
 set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR AMD64)
 

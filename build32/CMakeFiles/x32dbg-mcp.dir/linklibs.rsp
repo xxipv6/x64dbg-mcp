@@ -1,1 +1,0 @@
- ../lib/x86/libx32dbg_plugin.a ../lib/x86/libx32bridge.a ../lib/x86/libx32dbg.a -lws2_32 -ldbghelp -static -static-libgcc -static-libstdc++ -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 

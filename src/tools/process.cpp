@@ -13,16 +13,16 @@ static nlohmann::json HandleAttach(const nlohmann::json& params)
         DWORD pid = params.at("pid").get<DWORD>();
         std::ostringstream cmd;
         cmd << "attach " << pid;
-        return SimpleCmd(cmd.str());
+        return StateCheckedCmd(cmd.str(), true, 2000, 50, false);
     }
-    catch (const std::exception& e) { return {{"success", false}, {"error", std::string("attach: ") + e.what()}}; }
+    catch (const std::exception& e) { return ToolError("attach", e); }
 }
 
 // ---------------------------------------------------------------------------
 // Tool: detach
 // ---------------------------------------------------------------------------
 
-static nlohmann::json HandleDetach(const nlohmann::json&) { return SimpleCmd("detach"); }
+static nlohmann::json HandleDetach(const nlohmann::json&) { return StateCheckedCmd("detach", false); }
 
 // ---------------------------------------------------------------------------
 // Tool: inject_dll
@@ -37,7 +37,7 @@ static nlohmann::json HandleInjectDll(const nlohmann::json& params)
         cmd << "dllinject \"" << path << "\"";
         return SimpleCmd(cmd.str());
     }
-    catch (const std::exception& e) { return {{"success", false}, {"error", std::string("inject_dll: ") + e.what()}}; }
+    catch (const std::exception& e) { return ToolError("inject_dll", e); }
 }
 
 // ---------------------------------------------------------------------------
@@ -53,7 +53,7 @@ static nlohmann::json HandleEjectDll(const nlohmann::json& params)
         cmd << "dlleject \"" << path << "\"";
         return SimpleCmd(cmd.str());
     }
-    catch (const std::exception& e) { return {{"success", false}, {"error", std::string("eject_dll: ") + e.what()}}; }
+    catch (const std::exception& e) { return ToolError("eject_dll", e); }
 }
 
 // ---------------------------------------------------------------------------
@@ -64,33 +64,38 @@ static nlohmann::json HandleApplyPatch(const nlohmann::json& params)
 {
     try
     {
+        auto* dbgFuncs = DbgFunctions();
+        if (!dbgFuncs || !dbgFuncs->MemPatch)
+            return {{"success", false}, {"error", "MemPatch not available"}};
+
         std::string addrStr = params.at("address").get<std::string>();
         duint addr = ParseHexAddress(addrStr);
         std::string hexData = params.at("data").get<std::string>();
-        std::vector<unsigned char> bytes;
-        std::istringstream iss(hexData);
-        std::string tok;
-        while (iss >> tok)
-            bytes.push_back(static_cast<unsigned char>(std::stoul(tok, nullptr, 16)));
+        std::vector<unsigned char> bytes = ParseHexBytes(hexData);
         if (bytes.empty())
             return {{"success", false}, {"error", "No valid hex bytes"}};
 
-        // Read original bytes first for verification
         std::vector<unsigned char> orig(bytes.size(), 0);
-        DbgMemRead(addr, orig.data(), static_cast<duint>(bytes.size()));
+        std::vector<unsigned char> patched(bytes.size(), 0);
+        if (!DbgMemRead(addr, orig.data(), static_cast<duint>(orig.size())))
+            return {{"success", false}, {"error", "Failed to read original bytes"}};
 
-        // Use "replace" command which properly registers patches in x64dbg's patch system
-        std::ostringstream cmd;
-        cmd << "replace 0x" << std::hex << addr << ", \"";
-        for (size_t i = 0; i < bytes.size(); ++i)
-        {
-            if (i > 0) cmd << " ";
-            cmd << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(bytes[i]);
-        }
-        cmd << "\"";
-        return SimpleCmd(cmd.str());
+        if (!dbgFuncs->MemPatch(addr, bytes.data(), static_cast<duint>(bytes.size())))
+            return {{"success", false}, {"error", "MemPatch failed"}};
+
+        if (!DbgMemRead(addr, patched.data(), static_cast<duint>(patched.size())))
+            return {{"success", false}, {"error", "Failed to verify patched bytes"}};
+
+        bool changed = patched == bytes;
+        return {
+            {"success", changed},
+            {"address", RegToHex(addr)},
+            {"requested", BytesToHex(bytes.data(), bytes.size())},
+            {"original", BytesToHex(orig.data(), orig.size())},
+            {"current", BytesToHex(patched.data(), patched.size())}
+        };
     }
-    catch (const std::exception& e) { return {{"success", false}, {"error", std::string("apply_patch: ") + e.what()}}; }
+    catch (const std::exception& e) { return ToolError("apply_patch", e); }
 }
 
 // ---------------------------------------------------------------------------
@@ -104,14 +109,17 @@ static nlohmann::json HandleGetPatches(const nlohmann::json&)
         return {{"success", false}, {"error", "PatchEnum not available"}};
 
     // Enumerate patches via DBGFUNCTIONS
+    size_t cbsize = 0;
+    if (!dbgFuncs->PatchEnum(nullptr, &cbsize))
+        return {{"success", false}, {"error", "PatchEnum size query failed"}};
+
     std::vector<DBGPATCHINFO> patches;
-    size_t count = 0;
-    // PatchEnum returns count when patches=nullptr
-    dbgFuncs->PatchEnum(nullptr, &count);
+    size_t count = cbsize / sizeof(DBGPATCHINFO);
     if (count > 0)
     {
         patches.resize(count);
-        dbgFuncs->PatchEnum(patches.data(), &count);
+        if (!dbgFuncs->PatchEnum(patches.data(), nullptr))
+            return {{"success", false}, {"error", "PatchEnum read failed"}};
     }
 
     nlohmann::json result;
@@ -145,7 +153,7 @@ static nlohmann::json HandleSetException(const nlohmann::json& params)
         cmd << "SetExceptionBreakpoint " << code << ", " << action;
         return SimpleCmd(cmd.str());
     }
-    catch (const std::exception& e) { return {{"success", false}, {"error", std::string("set_exception: ") + e.what()}}; }
+    catch (const std::exception& e) { return ToolError("set_exception", e); }
 }
 
 // ---------------------------------------------------------------------------
